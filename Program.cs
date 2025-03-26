@@ -1,9 +1,11 @@
 using MinimalAPIsMovies.Entities;
+using MinimalAPIsMovies.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 string authorName = builder.Configuration.GetValue<string>("AuthorName")!;
+
 
 builder.Services.AddCors(options =>
 {
@@ -23,8 +25,11 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddOutputCache();
 
+builder.Services.AddScoped<IGenresRepository, GenresRepository>();
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
@@ -35,6 +40,9 @@ app.UseOutputCache();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
@@ -57,6 +65,12 @@ app.MapGet("/genres", () =>
 
     return genres;
 }).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(15)));
+
+app.MapPost("/genres", async (Genre genre, IGenresRepository genresRepository) =>
+{
+    await genresRepository.Create(genre);
+    return TypedResults.Created($"/genres/{genre.Id}", genre);
+});
 
 app.Run();
 
