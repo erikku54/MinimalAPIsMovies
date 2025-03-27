@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.OutputCaching;
 using MinimalAPIsMovies.Entities;
 using MinimalAPIsMovies.Repositories;
 
@@ -35,7 +36,6 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseCors("free");
-app.UseOutputCache();
 
 if (app.Environment.IsDevelopment())
 {
@@ -46,15 +46,67 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseOutputCache();
+
+
+var genresEndpoints = app.MapGroup("/genres");
 
 app.MapGet("/", () => authorName);
 
-app.MapGet("/genres", () =>
+genresEndpoints.MapGet("/", async (IGenresRepository genresRepository) =>
+{
+    var genres = await genresRepository.GetAll();
+    return TypedResults.Ok(genres);
+}).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("genres-get"));
+
+genresEndpoints.MapGet("/{id}", async (int id, IGenresRepository genresRepository) =>
+{
+    var genre = await genresRepository.GetById(id);
+    if (genre is null)
+    {
+        return Results.NotFound();
+        // return TypedResults.NotFound();
+    }
+    return TypedResults.Ok(genre);
+});
+
+genresEndpoints.MapPost("/", async (Genre genre, IGenresRepository genresRepository, IOutputCacheStore outputCacheStore) =>
+{
+    var id = await genresRepository.Create(genre);
+    await outputCacheStore.EvictByTagAsync("genres-get", default);
+    return TypedResults.Created($"/genres/{id}", genre);
+});
+
+genresEndpoints.MapPut("/{id:int}", async (int id, Genre genre, IGenresRepository genresRepository, IOutputCacheStore outputCacheStore) =>
+{
+    if (!await genresRepository.Exists(id))
+    {
+        return Results.NotFound();
+    }
+    genre.Id = id;
+    await genresRepository.Update(genre);
+    await outputCacheStore.EvictByTagAsync("genres-get", default);
+    return TypedResults.Ok(genre);
+});
+
+genresEndpoints.MapDelete("/{id:int}", async (int id, IGenresRepository genresRepository, IOutputCacheStore outputCacheStore) =>
+{
+    if (!await genresRepository.Exists(id))
+    {
+        return Results.NotFound();
+    }
+    await genresRepository.Delete(id);
+    await outputCacheStore.EvictByTagAsync("genres-get", default);
+    return Results.NoContent();
+});
+
+
+genresEndpoints.MapPost("/seed", async (IGenresRepository genresRepository, IOutputCacheStore outputCacheStore) =>
 {
     var genres = new List<Genre>() {
-        new Genre { Id = 1, Name = "Drama" },
-        new Genre { Id = 2, Name = "Comedy" },
-        new Genre { Id = 3, Name = "Action" },
+        new Genre { Id = 1, Name = "Action" },
+        new Genre { Id = 2, Name = "Drama" },
+        new Genre { Id = 3, Name = "Comedy" },
         new Genre { Id = 4, Name = "Fantasy" },
         new Genre { Id = 5, Name = "Horror" },
         new Genre { Id = 6, Name = "Mystery" },
@@ -63,14 +115,14 @@ app.MapGet("/genres", () =>
         new Genre { Id = 9, Name = "Western" }
     };
 
-    return genres;
-}).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(15)));
+    foreach (var genre in genres)
+    {
+        await genresRepository.Create(genre);
+    }
+    // Task.WaitAll(genres.Select(genre => genresRepository.Create(genre)).ToArray());
 
-app.MapPost("/genres", async (Genre genre, IGenresRepository genresRepository) =>
-{
-    await genresRepository.Create(genre);
-    return TypedResults.Created($"/genres/{genre.Id}", genre);
+    await outputCacheStore.EvictByTagAsync("genres-get", default);
+    return TypedResults.Created("/genres", genres);
 });
 
 app.Run();
-
