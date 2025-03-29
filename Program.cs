@@ -34,6 +34,8 @@ builder.Services.AddScoped<IGenresRepository, GenresRepository>();
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddAutoMapper(typeof(Program));
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
