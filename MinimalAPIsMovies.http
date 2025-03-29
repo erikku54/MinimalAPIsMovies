@@ -4,3 +4,60 @@ GET {{MinimalAPIsMovies_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+# 測試根路徑，獲取作者名稱
+GET http://localhost:5000/
+Content-Type: application/json
+
+###
+
+# 獲取所有 genres
+GET http://localhost:5000/genres
+Content-Type: application/json
+
+###
+
+# 獲取特定 genre（ID = 1）
+GET http://localhost:5000/genres/1
+Content-Type: application/json
+
+###
+
+# 創建一個新的 genre
+POST http://localhost:5000/genres
+Content-Type: application/json
+
+{
+  "id": 10,
+  "name": "Sci-Fi"
+}
+
+###
+
+# 更新現有的 genre（ID = 1）
+PUT http://localhost:5000/genres/1
+Content-Type: application/json
+
+{
+  "name": "Action Updated"
+}
+
+###
+
+# 刪除一個 genre（ID = 1）
+DELETE http://localhost:5000/genres/1
+Content-Type: application/json
+
+###
+
+# 測試不存在的 genre（應返回 404）
+GET http://localhost:5000/genres/999
+Content-Type: application/json
+
+###
+
+# Seed 資料，初始化 genres
+POST http://localhost:5000/genres/seed
+Content-Type: application/json
+
+###
