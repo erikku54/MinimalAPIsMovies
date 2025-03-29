@@ -29,6 +29,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddOutputCache();
 
 builder.Services.AddScoped<IGenresRepository, GenresRepository>();
+builder.Services.AddScoped<IActorsRepository, ActorsRepository>();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();

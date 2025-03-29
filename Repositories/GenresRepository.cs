@@ -44,7 +44,7 @@ public class GenresRepository : IGenresRepository
         using (var connection = new SqlConnection(_connectionString))
         {
             // var query = "SELECT COUNT(1) FROM Genres WHERE Id = @Id";
-            var count = await connection.QuerySingleAsync<int>("Genres_Exist", new { Id = id }, commandType: CommandType.StoredProcedure);
+            var count = await connection.QuerySingleAsync<int>("Genres_Exists", new { Id = id }, commandType: CommandType.StoredProcedure);
             return (count > 0);
         }
     }

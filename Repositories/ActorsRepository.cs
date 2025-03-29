@@ -1,0 +1,79 @@
+using System;
+using System.Data;
+using Dapper;
+using Microsoft.Data.SqlClient;
+using MinimalAPIsMovies.Entities;
+
+namespace MinimalAPIsMovies.Repositories;
+
+public class ActorsRepository : IActorsRepository
+{
+    private readonly string _connectionString;
+    public ActorsRepository(IConfiguration configuration)
+    {
+        _connectionString = configuration.GetConnectionString("DefaultConnection")!;
+    }
+
+    public async Task<int> Create(Actor actor)
+    {
+        using (var connection = new SqlConnection(_connectionString))
+        {
+            // var query = "INSERT INTO Actors (Name, DateOfBirth, Picture) VALUES (@Name, @DateOfBirth, @Picture); SELECT CAST(SCOPE_IDENTITY() as int)";
+            var id = await connection.QuerySingleAsync<int>("Actors_Create", new { actor.Name, actor.DateOfBirth, actor.Picture }, commandType: CommandType.StoredProcedure);
+
+            actor.Id = id;
+            return id;
+        }
+    }
+
+    public async Task Delete(int id)
+    {
+        using (var connection = new SqlConnection(_connectionString))
+        {
+            // var query = "DELETE FROM Actors WHERE Id = @Id";
+            await connection.ExecuteAsync("Actors_Delete", new { Id = id }, commandType: CommandType.StoredProcedure);
+            return;
+        }
+    }
+
+    public async Task<bool> Exists(int id)
+    {
+        using (var connection = new SqlConnection(_connectionString))
+        {
+            // var query = "SELECT COUNT(1) FROM Actors WHERE Id = @Id";
+            var exists = await connection.ExecuteScalarAsync<bool>("Actors_Exists", new { Id = id }, commandType: CommandType.StoredProcedure);
+            return exists;
+        }
+    }
+
+    public async Task<List<Actor>> GetAll()
+    {
+        using (var connection = new SqlConnection(_connectionString))
+        {
+            // var query = "SELECT Id, Name, DateOfBirth, Picture FROM Actors ORDER BY Name";
+            var actors = await connection.QueryAsync<Actor>("Actors_GetAll", commandType: CommandType.StoredProcedure);
+            return actors.ToList();
+        }
+    }
+
+    public async Task<Actor?> GetById(int id)
+    {
+        using (var connection = new SqlConnection(_connectionString))
+        {
+            // var query = "SELECT Id, Name, DateOfBirth, Picture FROM Actors WHERE Id = @Id";
+            var actor = await connection.QuerySingleOrDefaultAsync<Actor>("Actors_GetById", new { Id = id }, commandType: CommandType.StoredProcedure);
+            return actor;
+        }
+    }
+
+    public async Task Update(Actor actor)
+    {
+        using (var connection = new SqlConnection(_connectionString))
+        {
+            // var query = "UPDATE Actors SET Name = @Name, DateOfBirth = @DateOfBirth, Picture = @Picture WHERE Id = @Id";
+            await connection.ExecuteAsync("Actors_Update", new { actor.Id, actor.Name, actor.DateOfBirth, actor.Picture }, commandType: CommandType.StoredProcedure);
+            return;
+        }
+    }
+}
+
