@@ -1,4 +1,5 @@
 using System;
+using System.Data;
 using Dapper;
 using Microsoft.Data.SqlClient;
 using MinimalAPIsMovies.Entities;
@@ -19,13 +20,10 @@ public class GenresRepository : IGenresRepository
     {
         using (var connection = new SqlConnection(_connectionString))
         {
-            // var query = connection.Query("SELECT 1").FirstOrDefault();
-            var query = @"INSERT INTO Genres (Name)
-                          VALUES (@Name);
+            /* var query = @"INSERT INTO Genres (Name) VALUES (@Name);
+                             SELECT CAST(SCOPE_IDENTITY() as int);";*/
 
-                          SELECT CAST(SCOPE_IDENTITY() as int);";
-
-            var id = await connection.QuerySingleAsync<int>(query, genre);
+            var id = await connection.QuerySingleAsync<int>("Genres_Create", new { genre.Name }, commandType: CommandType.StoredProcedure);
             genre.Id = id;
             return id;
         }
@@ -35,8 +33,8 @@ public class GenresRepository : IGenresRepository
     {
         using (var connection = new SqlConnection(_connectionString))
         {
-            var query = "DELETE FROM Genres WHERE Id = @Id";
-            await connection.ExecuteAsync(query, new { Id = id });
+            // var query = "DELETE FROM Genres WHERE Id = @Id";
+            await connection.ExecuteAsync("Genres_Delete", new { Id = id }, commandType: CommandType.StoredProcedure);
             return;
         }
     }
@@ -45,8 +43,8 @@ public class GenresRepository : IGenresRepository
     {
         using (var connection = new SqlConnection(_connectionString))
         {
-            var query = "SELECT COUNT(1) FROM Genres WHERE Id = @Id";
-            var count = await connection.QuerySingleAsync<int>(query, new { Id = id });
+            // var query = "SELECT COUNT(1) FROM Genres WHERE Id = @Id";
+            var count = await connection.QuerySingleAsync<int>("Genres_Exist", new { Id = id }, commandType: CommandType.StoredProcedure);
             return (count > 0);
         }
     }
@@ -55,8 +53,8 @@ public class GenresRepository : IGenresRepository
     {
         using (var connection = new SqlConnection(_connectionString))
         {
-            var query = "SELECT Id, Name FROM Genres ORDER BY Name";
-            var genres = (await connection.QueryAsync<Genre>(query));
+            // var query = "SELECT Id, Name FROM Genres ORDER BY Name";
+            var genres = (await connection.QueryAsync<Genre>(@"Genres_GetAll", commandType: CommandType.StoredProcedure));
             return genres.ToList();
         }
 
@@ -66,8 +64,8 @@ public class GenresRepository : IGenresRepository
     {
         using (var connection = new SqlConnection(_connectionString))
         {
-            var query = "SELECT Id, Name FROM Genres WHERE Id = @Id";
-            var genre = await connection.QueryFirstOrDefaultAsync<Genre>(query, new { Id = id });
+            // var query = "SELECT Id, Name FROM Genres WHERE Id = @Id";
+            var genre = await connection.QueryFirstOrDefaultAsync<Genre>("Genres_GetById", new { Id = id }, commandType: CommandType.StoredProcedure);
             return genre;
         }
     }
@@ -76,8 +74,8 @@ public class GenresRepository : IGenresRepository
     {
         using (var connection = new SqlConnection(_connectionString))
         {
-            var query = "UPDATE Genres SET Name = @Name WHERE Id = @Id";
-            await connection.ExecuteAsync(query, genre);
+            // var query = "UPDATE Genres SET Name = @Name WHERE Id = @Id";
+            await connection.ExecuteAsync("Genres_Update", new { genre.Id, genre.Name }, commandType: CommandType.StoredProcedure);
 
             return;
         }
