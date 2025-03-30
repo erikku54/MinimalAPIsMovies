@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.OutputCaching;
 using MinimalAPIsMovies.Endpoints;
 using MinimalAPIsMovies.Entities;
 using MinimalAPIsMovies.Repositories;
+using MinimalAPIsMovies.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,9 +28,12 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddOutputCache();
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<IGenresRepository, GenresRepository>();
 builder.Services.AddScoped<IActorsRepository, ActorsRepository>();
+
+builder.Services.AddTransient<IFileStorage, LocalFileStorage>();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -41,6 +45,7 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseCors("free");
+app.UseStaticFiles();
 
 if (app.Environment.IsDevelopment())
 {
