@@ -55,7 +55,8 @@ app.UseOutputCache();
 
 app.MapGet("/", () => authorName);
 
-var genresEndpoints = app.MapGroup("/genres").MapGenres();
+app.MapGroup("/genres").MapGenres();
+app.MapGroup("/actors").MapActors();
 
 app.Run();
 
