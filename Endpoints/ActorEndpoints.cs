@@ -16,6 +16,7 @@ public static class ActorEndpoints
     public static RouteGroupBuilder MapActors(this RouteGroupBuilder builder)
     {
         builder.MapPost("/", Create).DisableAntiforgery();
+        builder.MapDelete("/{id:int}", Delete);
         builder.MapGet("/", GetAll).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("actors-get"));
         builder.MapGet("/{id:int}", GetById);
         builder.MapGet("/getByName/{name}", GetByName);
@@ -87,6 +88,20 @@ public static class ActorEndpoints
         }
 
         await actorsRepository.Update(actorForUpdate);
+        await outputCacheStore.EvictByTagAsync("actors-get", default);
+        return TypedResults.NoContent();
+    }
+
+    static async Task<Results<NoContent, NotFound>> Delete(int id, IActorsRepository actorsRepository, IFileStorage fileStorage, IOutputCacheStore outputCacheStore)
+    {
+        var actor = await actorsRepository.GetById(id);
+        if (actor is null)
+        {
+            return TypedResults.NotFound();
+        }
+
+        await actorsRepository.Delete(id);
+        await fileStorage.Delete(actor.Picture, _container);
         await outputCacheStore.EvictByTagAsync("actors-get", default);
         return TypedResults.NoContent();
     }
