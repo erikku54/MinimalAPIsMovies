@@ -32,6 +32,7 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<IGenresRepository, GenresRepository>();
 builder.Services.AddScoped<IActorsRepository, ActorsRepository>();
+builder.Services.AddScoped<IMoviesRepository, MoviesRepository>();
 
 builder.Services.AddTransient<IFileStorage, LocalFileStorage>();
 
