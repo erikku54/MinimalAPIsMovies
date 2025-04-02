@@ -37,7 +37,7 @@ public class MoviesRepository : IMoviesRepository
         }
     }
 
-    public async Task<List<Movie>> GetAll(PaginationDTO paginationDTO, IHttpContextAccessor httpContextAccessor)
+    public async Task<List<Movie>> GetAll(PaginationDTO paginationDTO)
     {
         using (var connection = new SqlConnection(_connectionString))
         {

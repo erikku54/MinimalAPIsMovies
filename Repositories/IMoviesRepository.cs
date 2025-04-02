@@ -9,7 +9,7 @@ public interface IMoviesRepository
     Task<int> Create(Movie movie);
     Task Delete(int id);
     Task<bool> Exists(int id);
-    Task<List<Movie>> GetAll(PaginationDTO paginationDTO, IHttpContextAccessor httpContextAccessor);
+    Task<List<Movie>> GetAll(PaginationDTO paginationDTO);
     Task<Movie> GetById(int id);
     Task Update(Movie movie);
 }
