@@ -19,5 +19,8 @@ public class AutoMapperProfiles : Profile
         CreateMap<Movie, MovieDTO>();
         CreateMap<CreateMovieDTO, Movie>()
             .ForMember(dest => dest.Poster, opt => opt.Ignore()); // Ignore Poster property during mapping;
+
+        CreateMap<Comment, CommentDTO>();
+        CreateMap<CreateCommentDTO, Comment>();
     }
 }
