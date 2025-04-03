@@ -1,4 +1,5 @@
 using System;
+using MinimalAPIsMovies.Entities;
 
 namespace MinimalAPIsMovies.DTOs;
 
@@ -9,4 +10,5 @@ public class MovieDTO
     public bool InTheaters { get; set; }
     public DateTime ReleaseDate { get; set; }
     public string? Poster { get; set; }
+    public List<CommentDTO> Comments { get; set; } = new List<CommentDTO>();
 }

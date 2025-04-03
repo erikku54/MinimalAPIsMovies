@@ -54,7 +54,12 @@ public class MoviesRepository : IMoviesRepository
     {
         using (var connection = new SqlConnection(_connectionString))
         {
-            var movie = await connection.QuerySingleAsync<Movie>("Movies_GetById", new { id }, commandType: CommandType.StoredProcedure);
+            var multip = await connection.QueryMultipleAsync("Movies_GetById", new { id }, commandType: CommandType.StoredProcedure);
+
+            var movie = await multip.ReadSingleAsync<Movie>();
+            var comments = await multip.ReadAsync<Comment>();
+
+            movie.Comments = comments.ToList();
             return movie;
         }
     }
