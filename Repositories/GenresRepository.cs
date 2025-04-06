@@ -49,6 +49,24 @@ public class GenresRepository : IGenresRepository
         }
     }
 
+    public async Task<List<int>> Exists(List<int> ids)
+    {
+        var dt = new DataTable();
+        dt.Columns.Add("Id", typeof(int));
+
+        foreach (var id in ids)
+        {
+            dt.Rows.Add(id);
+        }
+
+        using (var connection = new SqlConnection(_connectionString))
+        {
+            // var query = "SELECT Id FROM Genres WHERE Id IN @Ids";
+            var idsOfGenresThatExists = await connection.QueryAsync<int>("Genres_GetBySeveralIds", new { genresIds = dt }, commandType: CommandType.StoredProcedure);
+            return idsOfGenresThatExists.ToList();
+        }
+    }
+
     public async Task<List<Genre>> GetAll()
     {
         using (var connection = new SqlConnection(_connectionString))

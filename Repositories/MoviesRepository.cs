@@ -18,6 +18,22 @@ public class MoviesRepository : IMoviesRepository
         _httpContext = httpContextAccessor.HttpContext!;
     }
 
+    public async Task Assign(int id, List<int> genresIds)
+    {
+        var dt = new DataTable();
+        dt.Columns.Add("Id", typeof(int));
+
+        foreach (var genreId in genresIds)
+        {
+            dt.Rows.Add(genreId);
+        }
+
+        using (var connection = new SqlConnection(_connectionString))
+        {
+            await connection.ExecuteAsync("Movies_AssignGenres", new { movieId = id, genresIds = dt }, commandType: CommandType.StoredProcedure);
+        }
+    }
+
     public async Task<int> Create(Movie movie)
     {
         using (var connection = new SqlConnection(_connectionString))
@@ -34,6 +50,15 @@ public class MoviesRepository : IMoviesRepository
         {
             await connection.ExecuteAsync("Movies_Delete", new { id }, commandType: CommandType.StoredProcedure);
             return;
+        }
+    }
+
+    public async Task<bool> Exists(int id)
+    {
+        using (var connection = new SqlConnection(_connectionString))
+        {
+            var exists = await connection.QuerySingleAsync<bool>("Movies_Exists", new { id }, commandType: CommandType.StoredProcedure);
+            return exists;
         }
     }
 
@@ -54,22 +79,14 @@ public class MoviesRepository : IMoviesRepository
     {
         using (var connection = new SqlConnection(_connectionString))
         {
-            var multip = await connection.QueryMultipleAsync("Movies_GetById", new { id }, commandType: CommandType.StoredProcedure);
+            using (var multip = await connection.QueryMultipleAsync("Movies_GetById", new { id }, commandType: CommandType.StoredProcedure))
+            {
+                var movie = await multip.ReadSingleAsync<Movie>();
+                var comments = await multip.ReadAsync<Comment>();
 
-            var movie = await multip.ReadSingleAsync<Movie>();
-            var comments = await multip.ReadAsync<Comment>();
-
-            movie.Comments = comments.ToList();
-            return movie;
-        }
-    }
-
-    public async Task<bool> Exists(int id)
-    {
-        using (var connection = new SqlConnection(_connectionString))
-        {
-            var exists = await connection.QuerySingleAsync<bool>("Movies_Exists", new { id }, commandType: CommandType.StoredProcedure);
-            return exists;
+                movie.Comments = comments.ToList();
+                return movie;
+            }
         }
     }
 
