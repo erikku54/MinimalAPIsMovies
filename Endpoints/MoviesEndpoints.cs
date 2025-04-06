@@ -17,6 +17,7 @@ public static class MoviesEndpoints
 
     public static RouteGroupBuilder MapMovies(this RouteGroupBuilder builder)
     {
+        builder.MapPost("/{id:int}/assignGenres", AssignGenres);
         builder.MapPost("/", Create).DisableAntiforgery();
         builder.MapDelete("/{id:int}", Delete);
         builder.MapGet("/", GetAll).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("movies-get"));
@@ -88,6 +89,26 @@ public static class MoviesEndpoints
 
         await moviesRepository.Update(movieForUpdate);
         await outputCacheStore.EvictByTagAsync("movies-get", default);
+        return TypedResults.NoContent();
+    }
+
+    static async Task<Results<NoContent, NotFound, BadRequest<string>>> AssignGenres(int id, List<int> genresIds, IMoviesRepository moviesRepository, IGenresRepository genresRepository)
+    {
+        var movie = await moviesRepository.GetById(id);
+        if (movie is null) return TypedResults.NotFound();
+
+        if (genresIds.Count == 0) return TypedResults.NoContent();
+
+        var genresThatExists = await genresRepository.Exists(genresIds);
+        if (genresThatExists.Count != genresIds.Count)
+        {
+            var nonExistingIds = genresIds.Except(genresThatExists).ToList();
+            var nonExistingIdsCSV = string.Join(", ", nonExistingIds);
+            return TypedResults.BadRequest($"The following genres do not exist: {nonExistingIdsCSV}");
+        }
+
+        await moviesRepository.Assign(id, genresIds);
+        // await outputCacheStore.EvictByTagAsync("movies-get", default);
         return TypedResults.NoContent();
     }
 }
