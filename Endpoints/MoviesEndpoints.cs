@@ -18,6 +18,7 @@ public static class MoviesEndpoints
     public static RouteGroupBuilder MapMovies(this RouteGroupBuilder builder)
     {
         builder.MapPost("/{id:int}/assignGenres", AssignGenres);
+        builder.MapPost("/{id:int}/assignActors", AssignActors);
         builder.MapPost("/", Create).DisableAntiforgery();
         builder.MapDelete("/{id:int}", Delete);
         builder.MapGet("/", GetAll).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("movies-get"));
@@ -25,6 +26,30 @@ public static class MoviesEndpoints
         builder.MapPut("/{id:int}", Update).DisableAntiforgery();
 
         return builder;
+    }
+
+    static async Task<Results<NotFound, NoContent, BadRequest<string>>> AssignActors(int id, List<AssignActorMovieDTO> actorsDTO, IMoviesRepository moviesRepository, IActorsRepository actorsRepository, IMapper mapper)
+    {
+        var movie = await moviesRepository.GetById(id);
+        if (movie is null) return TypedResults.NotFound();
+
+        if (actorsDTO.Count == 0) return TypedResults.NoContent();
+
+        var existingActors = new List<int>();
+        var actorsIds = actorsDTO.Select(x => x.ActorId).ToList();
+
+        existingActors = await actorsRepository.Exists(actorsIds);
+        if (existingActors.Count != actorsIds.Count)
+        {
+            var nonExistingIds = actorsIds.Except(existingActors).ToList();
+            var nonExistingIdsCSV = string.Join(", ", nonExistingIds);
+            return TypedResults.BadRequest($"The following actors do not exist: {nonExistingIdsCSV}");
+        }
+
+        var actors = mapper.Map<List<ActorMovie>>(actorsDTO);
+        await moviesRepository.Assign(id, actors);
+        // await outputCacheStore.EvictByTagAsync("movies-get", default);
+        return TypedResults.NoContent();
     }
 
     static async Task<Created<MovieDTO>> Create([FromForm] CreateMovieDTO createMovieDTO, IFileStorage fileStorage, IMoviesRepository moviesRepository, IOutputCacheStore outputCacheStore, IMapper mapper)

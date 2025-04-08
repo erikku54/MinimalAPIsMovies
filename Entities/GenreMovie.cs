@@ -1,6 +1,4 @@
-using MinimalAPIsMovies.Entities;
-
-namespace MinimalAPIsMovies.Endpoints;
+namespace MinimalAPIsMovies.Entities;
 
 public class GenreMovie
 {

@@ -34,6 +34,29 @@ public class MoviesRepository : IMoviesRepository
         }
     }
 
+    public async Task Assign(int id, List<ActorMovie> actors)
+    {
+        for (int i = 0; i < actors.Count; i++)
+        {
+            actors[i].Order = i + 1;
+        }
+
+        var dt = new DataTable();
+        dt.Columns.Add("ActorId", typeof(int));
+        dt.Columns.Add("Order", typeof(int));
+        dt.Columns.Add("Character", typeof(string));
+
+        foreach (var actorMovie in actors)
+        {
+            dt.Rows.Add(actorMovie.ActorId, actorMovie.Order, actorMovie.Character);
+        }
+
+        using (var connection = new SqlConnection(_connectionString))
+        {
+            await connection.ExecuteAsync("Movies_AssignActors", new { movieId = id, actorsMovies = dt }, commandType: CommandType.StoredProcedure);
+        }
+    }
+
     public async Task<int> Create(Movie movie)
     {
         using (var connection = new SqlConnection(_connectionString))
@@ -83,8 +106,15 @@ public class MoviesRepository : IMoviesRepository
             {
                 var movie = await multip.ReadSingleAsync<Movie>();
                 var comments = await multip.ReadAsync<Comment>();
+                var genres = await multip.ReadAsync<Genre>();
+                var actors = await multip.ReadAsync<ActorMovieDTO>();
 
                 movie.Comments = comments.ToList();
+                movie.GenresMovies = genres.Select(x => new GenreMovie { GenreId = x.Id, Genre = x }).ToList();
+                movie.ActorsMovies = actors.Select(x => new ActorMovie { ActorId = x.Id, Character = x.Character }).ToList();
+
+
+
                 return movie;
             }
         }
