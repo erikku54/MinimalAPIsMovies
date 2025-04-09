@@ -113,8 +113,6 @@ public class MoviesRepository : IMoviesRepository
                 movie.GenresMovies = genres.Select(x => new GenreMovie { GenreId = x.Id, Genre = x }).ToList();
                 movie.ActorsMovies = actors.Select(x => new ActorMovie { ActorId = x.Id, Character = x.Character }).ToList();
 
-
-
                 return movie;
             }
         }

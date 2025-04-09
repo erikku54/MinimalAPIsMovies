@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.OutputCaching;
 using MinimalAPIsMovies.Endpoints;
@@ -37,11 +38,16 @@ builder.Services.AddScoped<ICommentsRepository, CommentsRepository>();
 
 builder.Services.AddTransient<IFileStorage, LocalFileStorage>();
 
+// 啟用 API 端點探索:負責收集端點的元數據 (確保包括 Minimal API的所有端點都能被正確探索)
+builder.Services.AddEndpointsApiExplorer();
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+// 啟用 OpenAPI/Swagger 支援: 依賴元數據探索的結果來生成 API 文件
 builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddAutoMapper(typeof(Program));
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 var app = builder.Build();
 

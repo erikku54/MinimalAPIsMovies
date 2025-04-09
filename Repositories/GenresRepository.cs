@@ -49,6 +49,18 @@ public class GenresRepository : IGenresRepository
         }
     }
 
+    public async Task<bool> Exists(int id, string name)
+    {
+        using (var connection = new SqlConnection(_connectionString))
+        {
+            // var query = "SELECT COUNT(1) FROM Genres WHERE Id != @Id AND Name = @Name";
+            var exists = await connection.QuerySingleAsync<bool>("Genres_ExistsByIdAndName", new { Id = id, Name = name }, commandType: CommandType.StoredProcedure);
+            return exists;
+        }
+    }
+
+
+
     public async Task<List<int>> Exists(List<int> ids)
     {
         var dt = new DataTable();
