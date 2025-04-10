@@ -16,10 +16,10 @@ public class CreateGenreDTOValidator : AbstractValidator<CreateGenreDTO>
         }
 
         RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("The field '{PropertyName}' is required")
+            .NotEmpty().WithMessage(ValidationUtilities.NonEmptyMessage)
             .MinimumLength(3).WithMessage("Name must be at least 3 characters long")
-            .MaximumLength(150).WithMessage("The field '{PropertyName}' must be less than {MaxLength} characters")
-            .Must(FirstLetterIsUpper).WithMessage("The first letter of the field '{PropertyName}' must be uppercase")
+            .MaximumLength(150).WithMessage(ValidationUtilities.MaximumLengthMessage)
+            .Must(ValidationUtilities.FirstLetterIsUpper).WithMessage(ValidationUtilities.FirstLetterIsUpperMessage)
             .MustAsync(async (name, _) =>
             {
                 var exists = await genresRepository.Exists(id: 0, name);
@@ -27,12 +27,4 @@ public class CreateGenreDTOValidator : AbstractValidator<CreateGenreDTO>
             }).WithMessage(createGenreDTO => $"The genre name '{createGenreDTO.Name}' already exists.");
     }
 
-    private bool FirstLetterIsUpper(string name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            return true;
-
-        var firstLetter = name[0];
-        return firstLetter == char.ToUpper(firstLetter);
-    }
 }
