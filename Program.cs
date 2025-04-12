@@ -1,4 +1,5 @@
 using FluentValidation;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.OutputCaching;
 using MinimalAPIsMovies.Endpoints;
@@ -35,6 +36,7 @@ builder.Services.AddScoped<IGenresRepository, GenresRepository>();
 builder.Services.AddScoped<IActorsRepository, ActorsRepository>();
 builder.Services.AddScoped<IMoviesRepository, MoviesRepository>();
 builder.Services.AddScoped<ICommentsRepository, CommentsRepository>();
+builder.Services.AddScoped<IErrorsRepository, ErrorsRepository>();
 
 builder.Services.AddTransient<IFileStorage, LocalFileStorage>();
 
@@ -49,9 +51,36 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+
+app.UseExceptionHandler(ExceptionHandlerApp => ExceptionHandlerApp.Run(async context =>
+{
+    // 將錯誤訊息儲存在資料庫中
+    var exceptionHandlerFeature = context.Features.Get<IExceptionHandlerFeature>();
+    var exception = exceptionHandlerFeature?.Error;
+    if (exceptionHandlerFeature is null) return;
+
+    var error = new Error()
+    {
+        ErrorMessage = exception?.Message ?? "Unknown error",
+        StackTrace = exception?.StackTrace,
+        Date = DateTime.UtcNow,
+    };
+
+    // 自訂給使用者的錯誤訊息
+    await Results.BadRequest(new
+    {
+        Type = "error",
+        Message = "an expected exception has occurred",
+        StatusCode = 500,
+    }).ExecuteAsync(context);
+}));
+app.UseStatusCodePages();
+
 app.UseCors("free");
 app.UseStaticFiles();
 
