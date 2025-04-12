@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.OutputCaching;
 using MinimalAPIsMovies.DTOs;
 using MinimalAPIsMovies.Entities;
+using MinimalAPIsMovies.Filters;
 using MinimalAPIsMovies.Repositories;
 
 namespace MinimalAPIsMovies.Endpoints;
@@ -14,24 +15,19 @@ public static class GenresEndpoints
 {
     public static RouteGroupBuilder MapGenres(this RouteGroupBuilder builder)
     {
-        builder.MapPost("/", Create);
+        builder.MapPost("/", Create).AddEndpointFilter<ValidationFilter<CreateGenreDTO>>();
         builder.MapGet("/", GetGenres).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("genres-get"));
+
         builder.MapGet("/{id}", GetById);
-        builder.MapPut("/{id:int}", Update);
+        builder.MapPut("/{id:int}", Update).AddEndpointFilter<ValidationFilter<CreateGenreDTO>>();
         builder.MapDelete("/{id:int}", Delete);
         builder.MapPost("/seed", SeedGenres);
 
         return builder;
     }
 
-    static async Task<Results<Created<GenreDTO>, ValidationProblem>> Create(CreateGenreDTO createGenreDTO, IGenresRepository genresRepository, IOutputCacheStore outputCacheStore, IMapper mapper, IValidator<CreateGenreDTO> validator)
+    static async Task<Created<GenreDTO>> Create(CreateGenreDTO createGenreDTO, IGenresRepository genresRepository, IOutputCacheStore outputCacheStore, IMapper mapper)
     {
-        var validationResult = await validator.ValidateAsync(createGenreDTO);
-        if (!validationResult.IsValid)
-        {
-            return TypedResults.ValidationProblem(validationResult.ToDictionary());
-        }
-
         var genre = mapper.Map<Genre>(createGenreDTO);
 
         var id = await genresRepository.Create(genre);
@@ -63,31 +59,13 @@ public static class GenresEndpoints
         return TypedResults.Ok(genreDTO);
     }
 
-    static async Task<Results<Ok<GenreDTO>, NotFound, ValidationProblem>> Update(int id, CreateGenreDTO createGenreDTO, IGenresRepository genresRepository, IOutputCacheStore outputCacheStore, IMapper mapper, IValidator<CreateGenreDTO> validator)
+    static async Task<Results<Ok<GenreDTO>, NotFound>> Update(int id, CreateGenreDTO createGenreDTO, IGenresRepository genresRepository, IOutputCacheStore outputCacheStore, IMapper mapper)
     {
-        var validationResult = await validator.ValidateAsync(createGenreDTO);
-        if (!validationResult.IsValid)
-        {
-            return TypedResults.ValidationProblem(validationResult.ToDictionary());
-        }
-
         // Check if the genre exists
         if (!await genresRepository.Exists(id))
         {
             return TypedResults.NotFound();
         }
-
-        // Check if the genre name already exists
-        var exists = await genresRepository.Exists(id: 0, createGenreDTO.Name);
-        if (exists)
-        {
-            return TypedResults.ValidationProblem(new Dictionary<string, string[]>
-            {
-                { nameof(createGenreDTO.Name), new[] { $"The genre name '{createGenreDTO.Name}' already exists." } }
-            });
-        }
-
-
 
         if (!await genresRepository.Exists(id))
         {

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.OutputCaching;
 using MinimalAPIsMovies.DTOs;
 using MinimalAPIsMovies.Entities;
+using MinimalAPIsMovies.Filters;
 using MinimalAPIsMovies.Repositories;
 
 namespace MinimalAPIsMovies.Endpoints;
@@ -11,10 +12,10 @@ public static class CommentsEndpoints
 {
     public static RouteGroupBuilder MapComments(this RouteGroupBuilder builder)
     {
-        builder.MapPost("/", Create);
+        builder.MapPost("/", Create).AddEndpointFilter<ValidationFilter<CreateCommentDTO>>();
         builder.MapGet("/", GetAll).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("comments-get"));
         builder.MapGet("/{id:int}", GetById).WithName("GetCommentById");
-        builder.MapPut("/{id:int}", Update);
+        builder.MapPut("/{id:int}", Update).AddEndpointFilter<ValidationFilter<CreateCommentDTO>>();
         builder.MapDelete("/{id:int}", Delete);
         return builder;
     }
