@@ -20,6 +20,7 @@ public class ErrorsRepository : IErrorsRepository
         {
             error.Id = Guid.NewGuid();
 
+            // INSERT INTO Errors(Id, ErrorMessage, StackTrace, Date) VALUES (@Id, @errorMessage, @stackTrace, @date);
             await connection.ExecuteAsync("Errors_Create", new
             {
                 error.Id,

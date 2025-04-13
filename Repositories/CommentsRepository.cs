@@ -18,6 +18,7 @@ public class CommentsRepository : ICommentsRepository
     {
         using (var connection = new SqlConnection(_connectionString))
         {
+            // var query = "INSERT INTO Comments(Body, MovieId) VALUES (@body, @movieId);"
             var id = await connection.ExecuteAsync("Comments_Create", new { comment.Body, comment.MovieId }, commandType: CommandType.StoredProcedure);
 
             comment.Id = id;
