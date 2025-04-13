@@ -51,6 +51,9 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
+builder.Services.AddAuthentication().AddJwtBearer();
+builder.Services.AddAuthorization();
+
 builder.Services.AddProblemDetails();
 
 var app = builder.Build();
@@ -94,6 +97,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseOutputCache();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapGet("/", () => authorName);
 
