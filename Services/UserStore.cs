@@ -1,12 +1,21 @@
 using Microsoft.AspNetCore.Identity;
+using MinimalAPIsMovies.Repositories;
 
 namespace MinimalAPIsMovies.Services;
 
 public class UserStore : IUserStore<IdentityUser>, IUserPasswordStore<IdentityUser>, IUserEmailStore<IdentityUser>
 {
-    public Task<IdentityResult> CreateAsync(IdentityUser user, CancellationToken cancellationToken)
+    private readonly IUsersRepository _usersRepository;
+
+    public UserStore(IUsersRepository usersRepository)
     {
-        throw new NotImplementedException();
+        _usersRepository = usersRepository;
+    }
+
+    public async Task<IdentityResult> CreateAsync(IdentityUser user, CancellationToken cancellationToken)
+    {
+        user.Id = await _usersRepository.Create(user);
+        return IdentityResult.Success;
     }
 
     public Task<IdentityResult> DeleteAsync(IdentityUser user, CancellationToken cancellationToken)
@@ -16,12 +25,11 @@ public class UserStore : IUserStore<IdentityUser>, IUserPasswordStore<IdentityUs
 
     public void Dispose()
     {
-        throw new NotImplementedException();
     }
 
-    public Task<IdentityUser?> FindByEmailAsync(string normalizedEmail, CancellationToken cancellationToken)
+    public async Task<IdentityUser?> FindByEmailAsync(string normalizedEmail, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        return await _usersRepository.GetByEmail(normalizedEmail);
     }
 
     public Task<IdentityUser?> FindByIdAsync(string userId, CancellationToken cancellationToken)
@@ -29,14 +37,14 @@ public class UserStore : IUserStore<IdentityUser>, IUserPasswordStore<IdentityUs
         throw new NotImplementedException();
     }
 
-    public Task<IdentityUser?> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
+    public async Task<IdentityUser?> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        return await _usersRepository.GetByEmail(normalizedUserName);
     }
 
     public Task<string?> GetEmailAsync(IdentityUser user, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(user.Email);
     }
 
     public Task<bool> GetEmailConfirmedAsync(IdentityUser user, CancellationToken cancellationToken)
@@ -56,17 +64,17 @@ public class UserStore : IUserStore<IdentityUser>, IUserPasswordStore<IdentityUs
 
     public Task<string?> GetPasswordHashAsync(IdentityUser user, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(user.PasswordHash);
     }
 
     public Task<string> GetUserIdAsync(IdentityUser user, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(user.Id.ToString());
     }
 
     public Task<string?> GetUserNameAsync(IdentityUser user, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        return Task.FromResult(user.Email);
     }
 
     public Task<bool> HasPasswordAsync(IdentityUser user, CancellationToken cancellationToken)
@@ -86,17 +94,20 @@ public class UserStore : IUserStore<IdentityUser>, IUserPasswordStore<IdentityUs
 
     public Task SetNormalizedEmailAsync(IdentityUser user, string? normalizedEmail, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        user.NormalizedEmail = normalizedEmail;
+        return Task.CompletedTask;
     }
 
     public Task SetNormalizedUserNameAsync(IdentityUser user, string? normalizedName, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        user.NormalizedUserName = normalizedName;
+        return Task.CompletedTask;
     }
 
     public Task SetPasswordHashAsync(IdentityUser user, string? passwordHash, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        user.PasswordHash = passwordHash;
+        return Task.CompletedTask;
     }
 
     public Task SetUserNameAsync(IdentityUser user, string? userName, CancellationToken cancellationToken)

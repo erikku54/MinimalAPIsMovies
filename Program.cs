@@ -1,6 +1,7 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.OutputCaching;
 using MinimalAPIsMovies.Endpoints;
 using MinimalAPIsMovies.Entities;
@@ -36,9 +37,15 @@ builder.Services.AddScoped<IGenresRepository, GenresRepository>();
 builder.Services.AddScoped<IActorsRepository, ActorsRepository>();
 builder.Services.AddScoped<IMoviesRepository, MoviesRepository>();
 builder.Services.AddScoped<ICommentsRepository, CommentsRepository>();
+builder.Services.AddScoped<IUsersRepository, UsersRepository>();
 builder.Services.AddScoped<IErrorsRepository, ErrorsRepository>();
 
 builder.Services.AddTransient<IFileStorage, LocalFileStorage>();
+
+// Identity 服務相關
+builder.Services.AddTransient<IUserStore<IdentityUser>, UserStore>();
+builder.Services.AddTransient<SignInManager<IdentityUser>>();
+builder.Services.AddIdentityCore<IdentityUser>();
 
 // 啟用 API 端點探索:負責收集端點的元數據 (確保包括 Minimal API的所有端點都能被正確探索)
 builder.Services.AddEndpointsApiExplorer();
