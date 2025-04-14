@@ -3,10 +3,12 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.IdentityModel.Tokens;
 using MinimalAPIsMovies.Endpoints;
 using MinimalAPIsMovies.Entities;
 using MinimalAPIsMovies.Repositories;
 using MinimalAPIsMovies.Services;
+using MinimalAPIsMovies.Utilities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,7 +60,18 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
-builder.Services.AddAuthentication().AddJwtBearer();
+builder.Services.AddAuthentication()
+    .AddJwtBearer(options => options.TokenValidationParameters = new TokenValidationParameters
+    {
+        // 這些參數是用來驗證 JWT 的有效性
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        ValidateIssuerSigningKey = true,
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero,
+        IssuerSigningKeys = KeysHandler.GetAllKeys(builder.Configuration),
+        // IssuerSigningKey = KeysHandler.GetKeys(builder.Configuration).First(),
+    });
 builder.Services.AddAuthorization();
 
 builder.Services.AddProblemDetails();
@@ -114,6 +127,7 @@ app.MapGroup("/genres").MapGenres();
 app.MapGroup("/actors").MapActors();
 app.MapGroup("/movies").MapMovies();
 app.MapGroup("/movies/{movieId:int}/comments").MapComments();
+app.MapGroup("/users").MapUsers();
 
 app.Run();
 

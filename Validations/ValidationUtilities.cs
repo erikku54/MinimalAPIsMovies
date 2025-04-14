@@ -7,6 +7,8 @@ public static class ValidationUtilities
     public static string NonEmptyMessage = "The {PropertyName} field must not be empty.";
     public static string MaximumLengthMessage = "The field '{PropertyName}' must be less than {MaxLength} characters.";
     public static string FirstLetterIsUpperMessage = "The first letter of the field '{PropertyName}' must be uppercase.";
+    public static string EmailAddressMessage = "The field '{PropertyName}' must be a valid email address.";
+
     public static string GreaterThanDateMessage(DateTime minimunDate) => "The field '{PropertyName}' must be greater than " + minimunDate.ToShortDateString();
 
 
