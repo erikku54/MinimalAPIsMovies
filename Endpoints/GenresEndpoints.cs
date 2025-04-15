@@ -15,13 +15,17 @@ public static class GenresEndpoints
 {
     public static RouteGroupBuilder MapGenres(this RouteGroupBuilder builder)
     {
-        builder.MapPost("/", Create).AddEndpointFilter<ValidationFilter<CreateGenreDTO>>();
+        builder.MapPost("/", Create)
+            .AddEndpointFilter<ValidationFilter<CreateGenreDTO>>()
+            .RequireAuthorization("isadmin");
         builder.MapGet("/", GetGenres).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("genres-get"));
 
+        builder.MapDelete("/{id:int}", Delete).RequireAuthorization("isadmin");
         builder.MapGet("/{id}", GetById);
-        builder.MapPut("/{id:int}", Update).AddEndpointFilter<ValidationFilter<CreateGenreDTO>>();
-        builder.MapDelete("/{id:int}", Delete);
         builder.MapPost("/seed", SeedGenres);
+        builder.MapPut("/{id:int}", Update)
+            .AddEndpointFilter<ValidationFilter<CreateGenreDTO>>()
+            .RequireAuthorization("isadmin");
 
         return builder;
     }

@@ -17,12 +17,18 @@ public static class ActorEndpoints
     private readonly static string _container = "actors";
     public static RouteGroupBuilder MapActors(this RouteGroupBuilder builder)
     {
-        builder.MapPost("/", Create).DisableAntiforgery().AddEndpointFilter<ValidationFilter<CreateActorDTO>>();
-        builder.MapDelete("/{id:int}", Delete);
+        builder.MapPost("/", Create)
+            .DisableAntiforgery()
+            .AddEndpointFilter<ValidationFilter<CreateActorDTO>>()
+            .RequireAuthorization("isadmin");
+        builder.MapDelete("/{id:int}", Delete).RequireAuthorization("isadmin");
         builder.MapGet("/", GetAll).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("actors-get"));
         builder.MapGet("/{id:int}", GetById);
         builder.MapGet("/getByName/{name}", GetByName);
-        builder.MapPut("/{id:int}", Update).DisableAntiforgery().AddEndpointFilter<ValidationFilter<CreateActorDTO>>();
+        builder.MapPut("/{id:int}", Update)
+            .DisableAntiforgery()
+            .AddEndpointFilter<ValidationFilter<CreateActorDTO>>()
+            .RequireAuthorization("isadmin");
 
         return builder;
     }

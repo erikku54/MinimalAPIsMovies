@@ -80,7 +80,10 @@ builder.Services.AddAuthentication()
             // IssuerSigningKey = KeysHandler.GetKeys(builder.Configuration).First(),
         };
     });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("isadmin", policy => policy.RequireClaim("isadmin"));
+});
 
 builder.Services.AddProblemDetails();
 

@@ -17,6 +17,13 @@ public static class UsersEndpoints
         group.MapPost("/", Register).AddEndpointFilter<ValidationFilter<UserCredentialsDTO>>();
         group.MapPost("/login", Login).AddEndpointFilter<ValidationFilter<UserCredentialsDTO>>();
 
+        group.MapPost("/makeadmin", MakeAdmin)
+            .AddEndpointFilter<ValidationFilter<EditClaimDTO>>()
+            .RequireAuthorization("isadmin");
+        group.MapPost("/removeadmin", RemoveAdmin)
+            .AddEndpointFilter<ValidationFilter<EditClaimDTO>>()
+            .RequireAuthorization("isadmin");
+
         return group;
     }
 
@@ -56,6 +63,26 @@ public static class UsersEndpoints
         return TypedResults.BadRequest("There was a problem with the email or password");
     }
 
+    static async Task<Results<NoContent, NotFound>> MakeAdmin(EditClaimDTO editClaimDTO, [FromServices] UserManager<IdentityUser> userManager)
+    {
+        var user = await userManager.FindByEmailAsync(editClaimDTO.Email);
+        if (user is null) return TypedResults.NotFound();
+
+        await userManager.AddClaimAsync(user, new Claim("isadmin", "true"));
+
+        return TypedResults.NoContent();
+    }
+
+    static async Task<Results<NoContent, NotFound>> RemoveAdmin(EditClaimDTO editClaimDTO, [FromServices] UserManager<IdentityUser> userManager)
+    {
+        var user = await userManager.FindByEmailAsync(editClaimDTO.Email);
+        if (user is null) return TypedResults.NotFound();
+
+        await userManager.RemoveClaimAsync(user, new Claim("isadmin", "true"));
+
+        return TypedResults.NoContent();
+    }
+
     private async static Task<AuthenticationResponseDTO> BuildToken(UserCredentialsDTO userCredentialsDTO, UserManager<IdentityUser> userManager, IConfiguration configuration)
     {
         // 建立一個 claims 清單，這些資訊會寫入 JWT Token 中
@@ -64,6 +91,11 @@ public static class UsersEndpoints
             new Claim("email", userCredentialsDTO.Email),
             new Claim("Whatever I want", "this is a value")
         };
+
+        var user = await userManager.FindByEmailAsync(userCredentialsDTO.Email);
+        var claimsFromDb = await userManager.GetClaimsAsync(user!);
+
+        claims.AddRange(claimsFromDb);
 
         var key = KeysHandler.GetKeys(configuration).First(); // 取得簽章金鑰
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256); // 用 HmacSha256 產生簽章憑證
