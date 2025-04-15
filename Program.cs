@@ -43,6 +43,8 @@ builder.Services.AddScoped<IUsersRepository, UsersRepository>();
 builder.Services.AddScoped<IErrorsRepository, ErrorsRepository>();
 
 builder.Services.AddTransient<IFileStorage, LocalFileStorage>();
+builder.Services.AddTransient<IUsersService, UsersService>();
+
 
 // Identity 服務相關
 builder.Services.AddTransient<IUserStore<IdentityUser>, UserStore>();
@@ -61,16 +63,22 @@ builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 builder.Services.AddAuthentication()
-    .AddJwtBearer(options => options.TokenValidationParameters = new TokenValidationParameters
+    .AddJwtBearer(options =>
     {
-        // 這些參數是用來驗證 JWT 的有效性
-        ValidateIssuer = false,
-        ValidateAudience = false,
-        ValidateIssuerSigningKey = true,
-        ValidateLifetime = true,
-        ClockSkew = TimeSpan.Zero,
-        IssuerSigningKeys = KeysHandler.GetAllKeys(builder.Configuration),
-        // IssuerSigningKey = KeysHandler.GetKeys(builder.Configuration).First(),
+        // 保留 JWT Claims 的原始名稱，而不會自動映射為.NET ClaimTypes
+        options.MapInboundClaims = false;
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            // 這些參數是用來驗證 JWT 的有效性
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateIssuerSigningKey = true,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero,
+            IssuerSigningKeys = KeysHandler.GetAllKeys(builder.Configuration),
+            // IssuerSigningKey = KeysHandler.GetKeys(builder.Configuration).First(),
+        };
     });
 builder.Services.AddAuthorization();
 

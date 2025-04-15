@@ -5,6 +5,7 @@ using MinimalAPIsMovies.DTOs;
 using MinimalAPIsMovies.Entities;
 using MinimalAPIsMovies.Filters;
 using MinimalAPIsMovies.Repositories;
+using MinimalAPIsMovies.Services;
 
 namespace MinimalAPIsMovies.Endpoints;
 
@@ -12,7 +13,9 @@ public static class CommentsEndpoints
 {
     public static RouteGroupBuilder MapComments(this RouteGroupBuilder builder)
     {
-        builder.MapPost("/", Create).AddEndpointFilter<ValidationFilter<CreateCommentDTO>>();
+        builder.MapPost("/", Create)
+            .AddEndpointFilter<ValidationFilter<CreateCommentDTO>>()
+            .RequireAuthorization();
         builder.MapGet("/", GetAll).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("comments-get"));
         builder.MapGet("/{id:int}", GetById).WithName("GetCommentById");
         builder.MapPut("/{id:int}", Update).AddEndpointFilter<ValidationFilter<CreateCommentDTO>>();
@@ -20,13 +23,17 @@ public static class CommentsEndpoints
         return builder;
     }
 
-    static async Task<Results<CreatedAtRoute<CommentDTO>, NotFound>> Create(int movieId, CreateCommentDTO createCommentDTO, ICommentsRepository commentsRepository, IMoviesRepository moviesRepository, IOutputCacheStore outputCacheStore, IMapper mapper)
+    static async Task<Results<CreatedAtRoute<CommentDTO>, NotFound, BadRequest<string>>> Create(int movieId, CreateCommentDTO createCommentDTO, ICommentsRepository commentsRepository, IMoviesRepository moviesRepository, IUsersService usersService, IOutputCacheStore outputCacheStore, IMapper mapper)
     {
         var exists = await moviesRepository.Exists(movieId);
         if (!exists) return TypedResults.NotFound();
 
+        var user = await usersService.GetUser();
+        if (user is null) return TypedResults.BadRequest("User not found");
+
         var comment = mapper.Map<Comment>(createCommentDTO);
         comment.MovieId = movieId;
+        comment.UserId = user.Id;
 
         var id = await commentsRepository.Create(comment);
         await outputCacheStore.EvictByTagAsync("comments-get", default);
