@@ -15,7 +15,7 @@ public static class UsersEndpoints
     public static RouteGroupBuilder MapUsers(this RouteGroupBuilder group)
     {
         group.MapPost("/", Register).AddEndpointFilter<ValidationFilter<UserCredentialsDTO>>();
-
+        group.MapPost("/login", Login).AddEndpointFilter<ValidationFilter<UserCredentialsDTO>>();
 
         return group;
     }
@@ -34,19 +34,39 @@ public static class UsersEndpoints
             var authenticationResponse = await BuildToken(userCredentialsDTO, userManager, configuration);
             return TypedResults.Ok(authenticationResponse);
         }
+
         return TypedResults.BadRequest(result.Errors);
+    }
+
+    static async Task<Results<Ok<AuthenticationResponseDTO>, BadRequest<string>>> Login(UserCredentialsDTO userCredentialsDTO, [FromServices] SignInManager<IdentityUser> signInManager, [FromServices] UserManager<IdentityUser> userManager, IConfiguration configuration)
+    {
+        var user = await userManager.FindByEmailAsync(userCredentialsDTO.Email);
+        if (user is null)
+        {
+            return TypedResults.BadRequest("There was a problem with the email or password");
+        }
+
+        var results = await signInManager.CheckPasswordSignInAsync(user, userCredentialsDTO.Password, false);
+        if (results.Succeeded)
+        {
+            var authenticationResponse = await BuildToken(userCredentialsDTO, userManager, configuration);
+            return TypedResults.Ok(authenticationResponse);
+        }
+
+        return TypedResults.BadRequest("There was a problem with the email or password");
     }
 
     private async static Task<AuthenticationResponseDTO> BuildToken(UserCredentialsDTO userCredentialsDTO, UserManager<IdentityUser> userManager, IConfiguration configuration)
     {
+        // 建立一個 claims 清單，這些資訊會寫入 JWT Token 中
         var claims = new List<Claim>
         {
             new Claim("email", userCredentialsDTO.Email),
             new Claim("Whatever I want", "this is a value")
         };
 
-        var key = KeysHandler.GetKeys(configuration).First();
-        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var key = KeysHandler.GetKeys(configuration).First(); // 取得簽章金鑰
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256); // 用 HmacSha256 產生簽章憑證
 
         var expiration = DateTime.UtcNow.AddMinutes(30);
 
@@ -58,6 +78,7 @@ public static class UsersEndpoints
             signingCredentials: credentials
         );
 
+        // 產出實際的 JWT Token 字串
         var token = new JwtSecurityTokenHandler().WriteToken(securityToken);
 
         return new AuthenticationResponseDTO
