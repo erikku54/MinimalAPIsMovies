@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using MinimalAPIsMovies.DTOs;
 using MinimalAPIsMovies.Filters;
+using MinimalAPIsMovies.Services;
 using MinimalAPIsMovies.Utilities;
 
 namespace MinimalAPIsMovies.Endpoints;
@@ -23,6 +24,8 @@ public static class UsersEndpoints
         group.MapPost("/removeadmin", RemoveAdmin)
             .AddEndpointFilter<ValidationFilter<EditClaimDTO>>()
             .RequireAuthorization("isadmin");
+
+        group.MapGet("/renewtoken", Renew).RequireAuthorization();
 
         return group;
     }
@@ -61,6 +64,16 @@ public static class UsersEndpoints
         }
 
         return TypedResults.BadRequest("There was a problem with the email or password");
+    }
+
+    private static async Task<Results<NotFound, Ok<AuthenticationResponseDTO>>> Renew(IUsersService usersService, [FromServices] UserManager<IdentityUser> userManager, IConfiguration configuration)
+    {
+        var user = await usersService.GetUser();
+        if (user is null) return TypedResults.NotFound();
+
+        var userCredentialsDTO = new UserCredentialsDTO { Email = user.Email! };
+        var response = await BuildToken(userCredentialsDTO, userManager, configuration);
+        return TypedResults.Ok(response);
     }
 
     static async Task<Results<NoContent, NotFound>> MakeAdmin(EditClaimDTO editClaimDTO, [FromServices] UserManager<IdentityUser> userManager)
