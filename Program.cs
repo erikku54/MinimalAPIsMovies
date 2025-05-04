@@ -15,21 +15,22 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 string authorName = builder.Configuration.GetValue<string>("AuthorName")!;
 
-
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(corsPolicyBuilder =>
     {
-        corsPolicyBuilder.WithOrigins(builder.Configuration["AllowedOrigins"]!.Split(","))
+        corsPolicyBuilder
+            .WithOrigins(builder.Configuration["AllowedOrigins"]!.Split(","))
             .AllowAnyMethod()
             .AllowAnyHeader();
     });
-    options.AddPolicy("free", corsPo =>
-    {
-        corsPo.AllowAnyOrigin()
-            .AllowAnyMethod()
-            .AllowAnyHeader();
-    });
+    options.AddPolicy(
+        "free",
+        corsPo =>
+        {
+            corsPo.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+        }
+    );
 });
 
 builder.Services.AddOutputCache();
@@ -44,7 +45,6 @@ builder.Services.AddScoped<IErrorsRepository, ErrorsRepository>();
 
 builder.Services.AddTransient<IFileStorage, LocalFileStorage>();
 builder.Services.AddTransient<IUsersService, UsersService>();
-
 
 // Identity 服務相關
 builder.Services.AddTransient<IUserStore<IdentityUser>, UserStore>();
@@ -62,7 +62,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
-builder.Services.AddAuthentication()
+builder
+    .Services.AddAuthentication()
     .AddJwtBearer(options =>
     {
         // 保留 JWT Claims 的原始名稱，而不會自動映射為.NET ClaimTypes
@@ -91,28 +92,35 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 
-app.UseExceptionHandler(ExceptionHandlerApp => ExceptionHandlerApp.Run(async context =>
-{
-    // 將錯誤訊息儲存在資料庫中
-    var exceptionHandlerFeature = context.Features.Get<IExceptionHandlerFeature>();
-    var exception = exceptionHandlerFeature?.Error;
-    if (exceptionHandlerFeature is null) return;
-
-    var error = new Error()
+app.UseExceptionHandler(ExceptionHandlerApp =>
+    ExceptionHandlerApp.Run(async context =>
     {
-        ErrorMessage = exception?.Message ?? "Unknown error",
-        StackTrace = exception?.StackTrace,
-        Date = DateTime.UtcNow,
-    };
+        // 將錯誤訊息儲存在資料庫中
+        var exceptionHandlerFeature = context.Features.Get<IExceptionHandlerFeature>();
+        var exception = exceptionHandlerFeature?.Error;
+        if (exceptionHandlerFeature is null)
+            return;
 
-    // 自訂給使用者的錯誤訊息
-    await Results.BadRequest(new
-    {
-        Type = "error",
-        Message = "an expected exception has occurred",
-        StatusCode = 500,
-    }).ExecuteAsync(context);
-}));
+        var error = new Error()
+        {
+            ErrorMessage = exception?.Message ?? "Unknown error",
+            StackTrace = exception?.StackTrace,
+            Date = DateTime.UtcNow,
+        };
+
+        // 自訂給使用者的錯誤訊息
+        await Results
+            .BadRequest(
+                new
+                {
+                    Type = "error",
+                    Message = "an expected exception has occurred",
+                    StatusCode = 500,
+                }
+            )
+            .ExecuteAsync(context);
+    })
+);
 app.UseStatusCodePages();
 
 app.UseCors("free");
@@ -141,4 +149,3 @@ app.MapGroup("/movies/{movieId:int}/comments").MapComments();
 app.MapGroup("/users").MapUsers();
 
 app.Run();
-
