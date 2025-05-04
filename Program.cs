@@ -2,6 +2,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.IdentityModel.Tokens;
 using MinimalAPIsMovies.Endpoints;
@@ -141,6 +142,17 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapGet("/", () => authorName);
+app.MapGet("/error", (_) => throw new Exception("example error"));
+
+app.MapPost(
+    "/modelbinding",
+    ([FromQuery] string? name) =>
+    {
+        if (name is null)
+            name = "Empty name";
+        return TypedResults.Ok(name);
+    }
+);
 
 app.MapGroup("/genres").MapGenres();
 app.MapGroup("/actors").MapActors();

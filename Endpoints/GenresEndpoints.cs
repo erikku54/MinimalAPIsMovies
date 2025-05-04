@@ -36,18 +36,16 @@ public static class GenresEndpoints
 
     static async Task<Created<GenreDTO>> Create(
         CreateGenreDTO createGenreDTO,
-        IGenresRepository genresRepository,
-        IOutputCacheStore outputCacheStore,
-        IMapper mapper
+        [AsParameters] CreateGenreRequestDTO model
     )
     {
-        var genre = mapper.Map<Genre>(createGenreDTO);
+        var genre = model.Mapper.Map<Genre>(createGenreDTO);
 
-        var id = await genresRepository.Create(genre);
+        var id = await model.Repository.Create(genre);
 
-        await outputCacheStore.EvictByTagAsync("genres-get", default);
+        await model.OutputCacheStore.EvictByTagAsync("genres-get", default);
 
-        var genreDTO = mapper.Map<GenreDTO>(genre);
+        var genreDTO = model.Mapper.Map<GenreDTO>(genre);
         return TypedResults.Created($"/genres/{id}", genreDTO);
     }
 
@@ -77,19 +75,17 @@ public static class GenresEndpoints
     }
 
     static async Task<Results<Ok<GenreDTO>, NotFound>> GetById(
-        int id,
-        IGenresRepository genresRepository,
-        IMapper mapper
+        [AsParameters] GetGenreByIdRequestDTO model
     )
     {
-        var genre = await genresRepository.GetById(id);
+        var genre = await model.Repository.GetById(model.Id);
         if (genre is null)
         {
             // return Results.NotFound();
             return TypedResults.NotFound();
         }
 
-        var genreDTO = mapper.Map<GenreDTO>(genre);
+        var genreDTO = model.Mapper.Map<GenreDTO>(genre);
         return TypedResults.Ok(genreDTO);
     }
 
