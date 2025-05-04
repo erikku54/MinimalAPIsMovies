@@ -14,18 +14,23 @@ namespace MinimalAPIsMovies.Endpoints;
 
 public static class ActorEndpoints
 {
-    private readonly static string _container = "actors";
+    private static readonly string _container = "actors";
+
     public static RouteGroupBuilder MapActors(this RouteGroupBuilder builder)
     {
-        builder.MapPost("/", Create)
+        builder
+            .MapPost("/", Create)
             .DisableAntiforgery()
             .AddEndpointFilter<ValidationFilter<CreateActorDTO>>()
             .RequireAuthorization("isadmin");
         builder.MapDelete("/{id:int}", Delete).RequireAuthorization("isadmin");
-        builder.MapGet("/", GetAll).CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("actors-get"));
+        builder
+            .MapGet("/", GetAll)
+            .CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("actors-get"));
         builder.MapGet("/{id:int}", GetById);
         builder.MapGet("/getByName/{name}", GetByName);
-        builder.MapPut("/{id:int}", Update)
+        builder
+            .MapPut("/{id:int}", Update)
             .DisableAntiforgery()
             .AddEndpointFilter<ValidationFilter<CreateActorDTO>>()
             .RequireAuthorization("isadmin");
@@ -33,7 +38,13 @@ public static class ActorEndpoints
         return builder;
     }
 
-    static async Task<Created<ActorDTO>> Create([FromForm] CreateActorDTO createActorDTO, IOutputCacheStore outputCacheStore, IActorsRepository actorsRepository, IMapper mapper, IFileStorage fileStorage)
+    static async Task<Created<ActorDTO>> Create(
+        [FromForm] CreateActorDTO createActorDTO,
+        IOutputCacheStore outputCacheStore,
+        IActorsRepository actorsRepository,
+        IMapper mapper,
+        IFileStorage fileStorage
+    )
     {
         var actor = mapper.Map<Actor>(createActorDTO);
 
@@ -49,15 +60,22 @@ public static class ActorEndpoints
         return TypedResults.Created($"/actors/{id}", actorDTO);
     }
 
-    static async Task<Ok<List<ActorDTO>>> GetAll(IActorsRepository actorsRepository, IMapper mapper, int page = 1, int recordsPerPage = 10)
+    static async Task<Ok<List<ActorDTO>>> GetAll(
+        IActorsRepository actorsRepository,
+        IMapper mapper,
+        PaginationDTO pagination
+    )
     {
-        var pagination = new PaginationDTO { Page = page, RecordsPerPage = recordsPerPage };
         var actors = await actorsRepository.GetAll(pagination);
         var actorsDTO = mapper.Map<List<ActorDTO>>(actors);
         return TypedResults.Ok(actorsDTO);
     }
 
-    static async Task<Results<Ok<ActorDTO>, NotFound>> GetById(int id, IActorsRepository actorsRepository, IMapper mapper)
+    static async Task<Results<Ok<ActorDTO>, NotFound>> GetById(
+        int id,
+        IActorsRepository actorsRepository,
+        IMapper mapper
+    )
     {
         var actor = await actorsRepository.GetById(id);
         if (actor is null)
@@ -69,14 +87,25 @@ public static class ActorEndpoints
         return TypedResults.Ok(actorDTO);
     }
 
-    static async Task<Ok<List<ActorDTO>>> GetByName(string name, IActorsRepository actorsRepository, IMapper mapper)
+    static async Task<Ok<List<ActorDTO>>> GetByName(
+        string name,
+        IActorsRepository actorsRepository,
+        IMapper mapper
+    )
     {
         var actors = await actorsRepository.GetByName(name);
         var actorsDTO = mapper.Map<List<ActorDTO>>(actors);
         return TypedResults.Ok(actorsDTO);
     }
 
-    static async Task<Results<NoContent, NotFound>> Update(int id, [FromForm] CreateActorDTO createActorDTO, IActorsRepository actorsRepository, IFileStorage fileStorage, IOutputCacheStore outputCacheStore, IMapper mapper)
+    static async Task<Results<NoContent, NotFound>> Update(
+        int id,
+        [FromForm] CreateActorDTO createActorDTO,
+        IActorsRepository actorsRepository,
+        IFileStorage fileStorage,
+        IOutputCacheStore outputCacheStore,
+        IMapper mapper
+    )
     {
         var actor = await actorsRepository.GetById(id);
         if (actor is null)
@@ -91,7 +120,11 @@ public static class ActorEndpoints
 
         if (createActorDTO.Picture is not null)
         {
-            var url = await fileStorage.Edit(actorForUpdate.Picture, _container, createActorDTO.Picture);
+            var url = await fileStorage.Edit(
+                actorForUpdate.Picture,
+                _container,
+                createActorDTO.Picture
+            );
             actorForUpdate.Picture = url;
         }
 
@@ -100,7 +133,12 @@ public static class ActorEndpoints
         return TypedResults.NoContent();
     }
 
-    static async Task<Results<NoContent, NotFound>> Delete(int id, IActorsRepository actorsRepository, IFileStorage fileStorage, IOutputCacheStore outputCacheStore)
+    static async Task<Results<NoContent, NotFound>> Delete(
+        int id,
+        IActorsRepository actorsRepository,
+        IFileStorage fileStorage,
+        IOutputCacheStore outputCacheStore
+    )
     {
         var actor = await actorsRepository.GetById(id);
         if (actor is null)

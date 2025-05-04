@@ -23,7 +23,16 @@ public class ActorsRepository : IActorsRepository
         using (var connection = new SqlConnection(_connectionString))
         {
             // var query = "INSERT INTO Actors (Name, DateOfBirth, Picture) VALUES (@Name, @DateOfBirth, @Picture); SELECT CAST(SCOPE_IDENTITY() as int)";
-            var id = await connection.QuerySingleAsync<int>("Actors_Create", new { actor.Name, actor.DateOfBirth, actor.Picture }, commandType: CommandType.StoredProcedure);
+            var id = await connection.QuerySingleAsync<int>(
+                "Actors_Create",
+                new
+                {
+                    actor.Name,
+                    actor.DateOfBirth,
+                    actor.Picture,
+                },
+                commandType: CommandType.StoredProcedure
+            );
 
             actor.Id = id;
             return id;
@@ -35,7 +44,11 @@ public class ActorsRepository : IActorsRepository
         using (var connection = new SqlConnection(_connectionString))
         {
             // var query = "DELETE FROM Actors WHERE Id = @Id";
-            await connection.ExecuteAsync("Actors_Delete", new { Id = id }, commandType: CommandType.StoredProcedure);
+            await connection.ExecuteAsync(
+                "Actors_Delete",
+                new { Id = id },
+                commandType: CommandType.StoredProcedure
+            );
             return;
         }
     }
@@ -45,7 +58,11 @@ public class ActorsRepository : IActorsRepository
         using (var connection = new SqlConnection(_connectionString))
         {
             // var query = "SELECT COUNT(1) FROM Actors WHERE Id = @Id";
-            var exists = await connection.ExecuteScalarAsync<bool>("Actors_Exists", new { Id = id }, commandType: CommandType.StoredProcedure);
+            var exists = await connection.ExecuteScalarAsync<bool>(
+                "Actors_Exists",
+                new { Id = id },
+                commandType: CommandType.StoredProcedure
+            );
             return exists;
         }
     }
@@ -63,7 +80,11 @@ public class ActorsRepository : IActorsRepository
         using (var connection = new SqlConnection(_connectionString))
         {
             // var query = "SELECT Id FROM Actors a INNER JOIN @actorsIds ai ON a.Id = ai.Id";
-            var idsOfExistingActors = await connection.QueryAsync<int>("Actors_GetBySeveralIds", new { actorsIds = dt }, commandType: CommandType.StoredProcedure);
+            var idsOfExistingActors = await connection.QueryAsync<int>(
+                "Actors_GetBySeveralIds",
+                new { actorsIds = dt },
+                commandType: CommandType.StoredProcedure
+            );
             return idsOfExistingActors.ToList();
         }
     }
@@ -72,10 +93,18 @@ public class ActorsRepository : IActorsRepository
     {
         using (var connection = new SqlConnection(_connectionString))
         {
-            // var query = "SELECT Id, Name, DateOfBirth, Picture FROM Actors ORDER BY Name";
-            var actors = await connection.QueryAsync<Actor>("Actors_GetAll", new { pagination.Page, pagination.RecordsPerPage }, commandType: CommandType.StoredProcedure);
+            // var query = "SELECT Id, Name, DateOfBirth, Picture FROM Actors ORDER BY Name
+            //              OFFSET ((@page -1) * @recordsPerPage) ROWS FETCH NEXT @recordsPerPage ROWS ONLY;";
+            var actors = await connection.QueryAsync<Actor>(
+                "Actors_GetAll",
+                new { pagination.Page, pagination.RecordsPerPage },
+                commandType: CommandType.StoredProcedure
+            );
 
-            var actorsCount = await connection.QuerySingleAsync<int>("Actors_Count", commandType: CommandType.StoredProcedure);
+            var actorsCount = await connection.QuerySingleAsync<int>(
+                "Actors_Count",
+                commandType: CommandType.StoredProcedure
+            );
 
             _httpContext.Response.Headers.Append("totalAmountOfRecords", actorsCount.ToString());
 
@@ -88,7 +117,11 @@ public class ActorsRepository : IActorsRepository
         using (var connection = new SqlConnection(_connectionString))
         {
             // var query = "SELECT Id, Name, DateOfBirth, Picture FROM Actors WHERE Id = @Id";
-            var actor = await connection.QuerySingleOrDefaultAsync<Actor>("Actors_GetById", new { Id = id }, commandType: CommandType.StoredProcedure);
+            var actor = await connection.QuerySingleOrDefaultAsync<Actor>(
+                "Actors_GetById",
+                new { Id = id },
+                commandType: CommandType.StoredProcedure
+            );
             return actor;
         }
     }
@@ -98,7 +131,11 @@ public class ActorsRepository : IActorsRepository
         using (var connection = new SqlConnection(_connectionString))
         {
             // var query = "SELECT Id, Name, DateOfBirth, Picture FROM Actors WHERE Name LIKE '%'+@Name+'%'";
-            var actors = await connection.QueryAsync<Actor>("Actors_GetByName", new { Name = name }, commandType: CommandType.StoredProcedure);
+            var actors = await connection.QueryAsync<Actor>(
+                "Actors_GetByName",
+                new { Name = name },
+                commandType: CommandType.StoredProcedure
+            );
             return actors.ToList();
         }
     }
@@ -108,9 +145,18 @@ public class ActorsRepository : IActorsRepository
         using (var connection = new SqlConnection(_connectionString))
         {
             // var query = "UPDATE Actors SET Name = @Name, DateOfBirth = @DateOfBirth, Picture = @Picture WHERE Id = @Id";
-            await connection.ExecuteAsync("Actors_Update", new { actor.Id, actor.Name, actor.DateOfBirth, actor.Picture }, commandType: CommandType.StoredProcedure);
+            await connection.ExecuteAsync(
+                "Actors_Update",
+                new
+                {
+                    actor.Id,
+                    actor.Name,
+                    actor.DateOfBirth,
+                    actor.Picture,
+                },
+                commandType: CommandType.StoredProcedure
+            );
             return;
         }
     }
 }
-
