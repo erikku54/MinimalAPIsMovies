@@ -1,4 +1,5 @@
 using System;
+using MinimalAPIsMovies.Utilities;
 
 namespace MinimalAPIsMovies.DTOs;
 
@@ -22,13 +23,11 @@ public class PaginationDTO
     // 中間還有TryParse的過程
     public static ValueTask<PaginationDTO> BindAsync(HttpContext context)
     {
-        var pageStr = context.Request.Query[nameof(Page)].ToString();
-        var recordsPerPageStr = context.Request.Query[nameof(RecordsPerPage)].ToString();
-
-        var page = int.TryParse(pageStr, out var pageValue) ? pageValue : PageDefault;
-        var recordsPerPage = int.TryParse(recordsPerPageStr, out var recordsPerPageValue)
-            ? recordsPerPageValue
-            : RecordsPerPageDefault;
+        var page = context.ExtractValueOrDefault(nameof(Page), PageDefault);
+        var recordsPerPage = context.ExtractValueOrDefault(
+            nameof(RecordsPerPage),
+            RecordsPerPageDefault
+        );
 
         var pagination = new PaginationDTO { Page = page, RecordsPerPage = recordsPerPage };
 

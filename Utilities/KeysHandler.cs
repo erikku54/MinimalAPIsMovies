@@ -9,12 +9,14 @@ public class KeysHandler
     private const string KeysSection_Value = "Value";
     private const string _outIssuer = "our-app";
 
-    public static IEnumerable<SecurityKey> GetKeys(IConfiguration configuration) => GetKeys(configuration, _outIssuer);
+    public static IEnumerable<SecurityKey> GetKeys(IConfiguration configuration) =>
+        GetKeys(configuration, _outIssuer);
 
     public static IEnumerable<SecurityKey> GetKeys(IConfiguration configuration, string issuer)
     {
         // configuration.GetSection(KeysSection)會指向密鑰檔secret.json的根節點
-        var signingKey = configuration.GetSection(KeysSection)
+        var signingKey = configuration
+            .GetSection(KeysSection)
             .GetChildren()
             .SingleOrDefault(sk => sk[KeysSection_Issuer] == issuer);
 
@@ -27,8 +29,7 @@ public class KeysHandler
 
     public static IEnumerable<SecurityKey> GetAllKeys(IConfiguration configuration)
     {
-        var signingKeys = configuration.GetSection(KeysSection)
-            .GetChildren();
+        var signingKeys = configuration.GetSection(KeysSection).GetChildren();
 
         foreach (var signingKey in signingKeys)
         {
