@@ -1,4 +1,3 @@
-using System;
 using MinimalAPIsMovies.Utilities;
 
 namespace MinimalAPIsMovies.DTOs;
@@ -9,9 +8,9 @@ public class PaginationDTO
     private const int RecordsPerPageDefault = 10;
     private const int RecordsPerPageMax = 50;
 
-    private int _recordsPerPage = 10;
+    private int _recordsPerPage = RecordsPerPageDefault;
 
-    public int Page { get; set; } = 1;
+    public int? Page { get; set; } = PageDefault;
     public int RecordsPerPage
     {
         get => _recordsPerPage;

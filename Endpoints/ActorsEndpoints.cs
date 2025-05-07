@@ -4,11 +4,14 @@ using FluentValidation;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.OpenApi.Any;
+using Microsoft.OpenApi.Models;
 using MinimalAPIsMovies.DTOs;
 using MinimalAPIsMovies.Entities;
 using MinimalAPIsMovies.Filters;
 using MinimalAPIsMovies.Repositories;
 using MinimalAPIsMovies.Services;
+using MinimalAPIsMovies.Utilities;
 
 namespace MinimalAPIsMovies.Endpoints;
 
@@ -26,7 +29,9 @@ public static class ActorEndpoints
         builder.MapDelete("/{id:int}", Delete).RequireAuthorization("isadmin");
         builder
             .MapGet("/", GetAll)
-            .CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("actors-get"));
+            .CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("actors-get"))
+            .AddPaginationParameters();
+
         builder.MapGet("/{id:int}", GetById);
         builder.MapGet("/getByName/{name}", GetByName);
         builder
