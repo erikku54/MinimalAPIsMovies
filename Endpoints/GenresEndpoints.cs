@@ -29,7 +29,16 @@ public static class GenresEndpoints
         builder
             .MapPut("/{id:int}", Update)
             .AddEndpointFilter<ValidationFilter<CreateGenreDTO>>()
-            .RequireAuthorization("isadmin");
+            .RequireAuthorization("isadmin")
+            .WithOpenApi(operation =>
+            {
+                operation.Summary = "Update a genre";
+                operation.Description = "With his endpoint, you can update a genre by its ID.";
+                operation.Parameters[0].Description = "The ID of the genre to update.";
+                operation.RequestBody.Description = "The genre to update.";
+
+                return operation;
+            });
 
         return builder;
     }

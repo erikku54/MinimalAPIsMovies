@@ -5,10 +5,12 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using MinimalAPIsMovies.Endpoints;
 using MinimalAPIsMovies.Entities;
 using MinimalAPIsMovies.Repositories;
 using MinimalAPIsMovies.Services;
+using MinimalAPIsMovies.Swagger;
 using MinimalAPIsMovies.Utilities;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -58,7 +60,40 @@ builder.Services.AddEndpointsApiExplorer();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 // 啟用 OpenAPI/Swagger 支援: 依賴元數據探索的結果來生成 API 文件
 builder.Services.AddOpenApi();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc(
+        "v1",
+        new()
+        {
+            Title = "Movies APIs",
+            Description = "Movies API built with ASP.NET Core Minimal APIs",
+            Contact = new()
+            {
+                Name = authorName,
+                Email = "eric@movies.com",
+                Url = new Uri("https://www.movies.com"),
+            },
+            License = new() { Name = "MIT", Url = new Uri("https://opensource.org/licenses/MIT") },
+            Version = "v1",
+        }
+    );
+
+    options.AddSecurityDefinition(
+        "Bearer",
+        new()
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.ApiKey,
+            Scheme = "Bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description = "JWT Authorization header using the Bearer scheme.",
+        }
+    );
+
+    options.OperationFilter<AuthorizationFilter>();
+});
 
 builder.Services.AddAutoMapper(typeof(Program));
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();

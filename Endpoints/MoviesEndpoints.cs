@@ -25,7 +25,9 @@ public static class MoviesEndpoints
             .MapPost("/", Create)
             .DisableAntiforgery()
             .AddEndpointFilter<ValidationFilter<CreateMovieDTO>>()
-            .RequireAuthorization("isadmin");
+            .RequireAuthorization("isadmin")
+            .WithOpenApi();
+
         builder.MapDelete("/{id:int}", Delete).RequireAuthorization("isadmin");
         builder
             .MapGet("/", GetAll)
@@ -36,7 +38,8 @@ public static class MoviesEndpoints
             .MapPut("/{id:int}", Update)
             .DisableAntiforgery()
             .AddEndpointFilter<ValidationFilter<CreateMovieDTO>>()
-            .RequireAuthorization("isadmin");
+            .RequireAuthorization("isadmin")
+            .WithOpenApi();
 
         return builder;
     }

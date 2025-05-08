@@ -25,7 +25,9 @@ public static class ActorEndpoints
             .MapPost("/", Create)
             .DisableAntiforgery()
             .AddEndpointFilter<ValidationFilter<CreateActorDTO>>()
-            .RequireAuthorization("isadmin");
+            .RequireAuthorization("isadmin")
+            .WithOpenApi();
+
         builder.MapDelete("/{id:int}", Delete).RequireAuthorization("isadmin");
         builder
             .MapGet("/", GetAll)
@@ -38,7 +40,8 @@ public static class ActorEndpoints
             .MapPut("/{id:int}", Update)
             .DisableAntiforgery()
             .AddEndpointFilter<ValidationFilter<CreateActorDTO>>()
-            .RequireAuthorization("isadmin");
+            .RequireAuthorization("isadmin")
+            .WithOpenApi();
 
         return builder;
     }
