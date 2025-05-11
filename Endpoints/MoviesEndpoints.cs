@@ -29,6 +29,9 @@ public static class MoviesEndpoints
             .WithOpenApi();
 
         builder.MapDelete("/{id:int}", Delete).RequireAuthorization("isadmin");
+
+        builder.MapGet("/filter", GetByFilter).AddMoviesFilterParameters();
+
         builder
             .MapGet("/", GetAll)
             .CacheOutput(c => c.Expire(TimeSpan.FromSeconds(60)).Tag("movies-get"))
@@ -117,6 +120,17 @@ public static class MoviesEndpoints
         await moviesRepository.Delete(id);
         await outputCacheStore.EvictByTagAsync("movies-get", default);
         return TypedResults.NoContent();
+    }
+
+    static async Task<Ok<List<MovieDTO>>> GetByFilter(
+        MoviesFilterDTO filterDTO,
+        IMoviesRepository moviesRepository,
+        IMapper mapper
+    )
+    {
+        var movies = await moviesRepository.GetByFilter(filterDTO);
+        var moviesDTO = mapper.Map<List<MovieDTO>>(movies);
+        return TypedResults.Ok(moviesDTO);
     }
 
     static async Task<Ok<List<MovieDTO>>> GetAll(

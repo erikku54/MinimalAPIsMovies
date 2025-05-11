@@ -14,4 +14,5 @@ public interface IMoviesRepository
     Task<List<Movie>> GetAll(PaginationDTO paginationDTO);
     Task<Movie> GetById(int id);
     Task Update(Movie movie);
+    Task<List<Movie>> GetByFilter(MoviesFilterDTO filterDTO);
 }

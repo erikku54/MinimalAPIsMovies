@@ -1,5 +1,6 @@
 using System;
 using System.Data;
+using AutoMapper;
 using Dapper;
 using Microsoft.Data.SqlClient;
 using MinimalAPIsMovies.DTOs;
@@ -30,7 +31,11 @@ public class MoviesRepository : IMoviesRepository
 
         using (var connection = new SqlConnection(_connectionString))
         {
-            await connection.ExecuteAsync("Movies_AssignGenres", new { movieId = id, genresIds = dt }, commandType: CommandType.StoredProcedure);
+            await connection.ExecuteAsync(
+                "Movies_AssignGenres",
+                new { movieId = id, genresIds = dt },
+                commandType: CommandType.StoredProcedure
+            );
         }
     }
 
@@ -53,7 +58,11 @@ public class MoviesRepository : IMoviesRepository
 
         using (var connection = new SqlConnection(_connectionString))
         {
-            await connection.ExecuteAsync("Movies_AssignActors", new { movieId = id, actorsMovies = dt }, commandType: CommandType.StoredProcedure);
+            await connection.ExecuteAsync(
+                "Movies_AssignActors",
+                new { movieId = id, actorsMovies = dt },
+                commandType: CommandType.StoredProcedure
+            );
         }
     }
 
@@ -61,7 +70,17 @@ public class MoviesRepository : IMoviesRepository
     {
         using (var connection = new SqlConnection(_connectionString))
         {
-            var id = await connection.QuerySingleAsync<int>("Movies_Create", new { movie.Title, movie.Poster, movie.InTheaters, movie.ReleaseDate }, commandType: CommandType.StoredProcedure);
+            var id = await connection.QuerySingleAsync<int>(
+                "Movies_Create",
+                new
+                {
+                    movie.Title,
+                    movie.Poster,
+                    movie.InTheaters,
+                    movie.ReleaseDate,
+                },
+                commandType: CommandType.StoredProcedure
+            );
             movie.Id = id;
             return id;
         }
@@ -71,7 +90,11 @@ public class MoviesRepository : IMoviesRepository
     {
         using (var connection = new SqlConnection(_connectionString))
         {
-            await connection.ExecuteAsync("Movies_Delete", new { id }, commandType: CommandType.StoredProcedure);
+            await connection.ExecuteAsync(
+                "Movies_Delete",
+                new { id },
+                commandType: CommandType.StoredProcedure
+            );
             return;
         }
     }
@@ -80,7 +103,11 @@ public class MoviesRepository : IMoviesRepository
     {
         using (var connection = new SqlConnection(_connectionString))
         {
-            var exists = await connection.QuerySingleAsync<bool>("Movies_Exists", new { id }, commandType: CommandType.StoredProcedure);
+            var exists = await connection.QuerySingleAsync<bool>(
+                "Movies_Exists",
+                new { id },
+                commandType: CommandType.StoredProcedure
+            );
             return exists;
         }
     }
@@ -89,9 +116,70 @@ public class MoviesRepository : IMoviesRepository
     {
         using (var connection = new SqlConnection(_connectionString))
         {
-            var movies = await connection.QueryAsync<Movie>("Movies_GetAll", new { paginationDTO.Page, paginationDTO.RecordsPerPage }, commandType: CommandType.StoredProcedure);
+            var movies = await connection.QueryAsync<Movie>(
+                "Movies_GetAll",
+                new { paginationDTO.Page, paginationDTO.RecordsPerPage },
+                commandType: CommandType.StoredProcedure
+            );
 
-            var movieCount = await connection.ExecuteScalarAsync<int>("Movies_Count", commandType: CommandType.StoredProcedure);
+            var movieCount = await connection.ExecuteScalarAsync<int>(
+                "Movies_Count",
+                commandType: CommandType.StoredProcedure
+            );
+
+            _httpContext.Response.Headers.Append("totalAmountOfRecords", movieCount.ToString());
+            return movies.ToList();
+        }
+    }
+
+    public async Task<List<Movie>> GetByFilter(MoviesFilterDTO filterDTO)
+    {
+        using (var connection = new SqlConnection(_connectionString))
+        {
+            // SELECT * FROM Movies
+            // WHERE (Title like '%' + @title + '%' OR @title = '')
+            // AND (ReleaseDate > GETDATE() OR @futureReleases = 'False')
+            // AND (InTheaters = 'True' OR @inTheaters = 'False')
+            // AND (Id in (Select MovieId FROM GenresMovies WHERE GenreId = @genreId) OR @genreId = 0)
+            // ORDER BY
+            // 	CASE WHEN @orderByField = 'Title' AND @orderByAscending = 1 THEN Title END ASC,
+            // 	CASE WHEN @orderByField = 'Title' AND @orderByAscending = 0 THEN Title END DESC,
+            // 	CASE WHEN @orderByField = 'ReleaseDate' AND @orderByAscending = 1 THEN ReleaseDate END ASC,
+            // 	CASE WHEN @orderByField = 'ReleaseDate' AND @orderByAscending = 0 THEN ReleaseDate END DESC
+            // OFFSET ((@page-1)*@recordsPerPage) ROWS FETCH NEXT @recordsPerPage ROWS ONLY;
+            var movies = await connection.QueryAsync<Movie>(
+                "Movies_GetByFilter",
+                new
+                {
+                    filterDTO.Page,
+                    filterDTO.RecordsPerPage,
+                    filterDTO.Title,
+                    filterDTO.GenreId,
+                    filterDTO.InTheaters,
+                    filterDTO.FutureReleases,
+                    filterDTO.OrderByField,
+                    filterDTO.OrderByAscending,
+                },
+                commandType: CommandType.StoredProcedure
+            );
+
+            // 計算總數
+            // SELECT COUNT(*) FROM Movies
+            // WHERE (Title like '%' + @title + '%' OR @title = '')
+            // AND (ReleaseDate > GETDATE() OR @futureReleases = 'False')
+            // AND (InTheaters = 'True' OR @intTheaters = 'False')
+            // AND (Id in (Select MovieId FROM GenresMovies WHERE GenreId = @genreId) OR @genreId = 0);
+            var movieCount = await connection.ExecuteScalarAsync<int>(
+                "Movies_Count",
+                new
+                {
+                    filterDTO.Title,
+                    filterDTO.GenreId,
+                    filterDTO.InTheaters,
+                    filterDTO.FutureReleases,
+                },
+                commandType: CommandType.StoredProcedure
+            );
 
             _httpContext.Response.Headers.Append("totalAmountOfRecords", movieCount.ToString());
             return movies.ToList();
@@ -102,7 +190,13 @@ public class MoviesRepository : IMoviesRepository
     {
         using (var connection = new SqlConnection(_connectionString))
         {
-            using (var multip = await connection.QueryMultipleAsync("Movies_GetById", new { id }, commandType: CommandType.StoredProcedure))
+            using (
+                var multip = await connection.QueryMultipleAsync(
+                    "Movies_GetById",
+                    new { id },
+                    commandType: CommandType.StoredProcedure
+                )
+            )
             {
                 var movie = await multip.ReadSingleAsync<Movie>();
                 var comments = await multip.ReadAsync<Comment>();
@@ -110,8 +204,12 @@ public class MoviesRepository : IMoviesRepository
                 var actors = await multip.ReadAsync<ActorMovieDTO>();
 
                 movie.Comments = comments.ToList();
-                movie.GenresMovies = genres.Select(x => new GenreMovie { GenreId = x.Id, Genre = x }).ToList();
-                movie.ActorsMovies = actors.Select(x => new ActorMovie { ActorId = x.Id, Character = x.Character }).ToList();
+                movie.GenresMovies = genres
+                    .Select(x => new GenreMovie { GenreId = x.Id, Genre = x })
+                    .ToList();
+                movie.ActorsMovies = actors
+                    .Select(x => new ActorMovie { ActorId = x.Id, Character = x.Character })
+                    .ToList();
 
                 return movie;
             }
@@ -122,9 +220,19 @@ public class MoviesRepository : IMoviesRepository
     {
         using (var connection = new SqlConnection(_connectionString))
         {
-            await connection.ExecuteAsync("Movies_Update", new { movie.Id, movie.Title, movie.Poster, movie.InTheaters, movie.ReleaseDate }, commandType: CommandType.StoredProcedure);
+            await connection.ExecuteAsync(
+                "Movies_Update",
+                new
+                {
+                    movie.Id,
+                    movie.Title,
+                    movie.Poster,
+                    movie.InTheaters,
+                    movie.ReleaseDate,
+                },
+                commandType: CommandType.StoredProcedure
+            );
             return;
         }
     }
-
 }
